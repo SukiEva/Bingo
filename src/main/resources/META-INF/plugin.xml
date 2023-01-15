@@ -5,6 +5,7 @@
     <vendor email="dev.suki@outlook.com">SukiEva</vendor>
 
     <depends>com.intellij.modules.platform</depends>
+    <depends>org.intellij.plugins.markdown</depends>
     <depends>com.intellij.java</depends>
 
     <extensions defaultExtensionNs="com.intellij">
