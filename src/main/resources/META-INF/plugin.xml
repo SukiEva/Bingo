@@ -1,18 +1,21 @@
 <!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
 <idea-plugin>
     <id>com.github.sukieva.bingo</id>
-    <name>IntelliJ Platform Plugin Bingo</name>
-    <vendor>sukieva</vendor>
+    <name>Bingo</name>
+    <vendor email="dev.suki@outlook.com">SukiEva</vendor>
 
     <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.java</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <applicationService serviceImplementation="com.github.sukieva.bingo.services.MyApplicationService"/>
-        <projectService serviceImplementation="com.github.sukieva.bingo.services.MyProjectService"/>
+        <notificationGroup displayType="BALLOON" id="Bingo.notificationGroup"/>
     </extensions>
 
-    <applicationListeners>
-        <listener class="com.github.sukieva.bingo.listeners.MyProjectManagerListener"
-                  topic="com.intellij.openapi.project.ProjectManagerListener"/>
-    </applicationListeners>
+    <actions>
+        <group id="com.github.sukieva.bingo" text="Bingo" popup="true">
+            <add-to-group group-id="ToolsMenu"/>
+            <action id="MybatisToolAction" class="com.github.sukieva.bingo.action.MybatisToolAction"
+                    text="MybatisTools"/>
+        </group>
+    </actions>
 </idea-plugin>
