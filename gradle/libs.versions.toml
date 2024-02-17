@@ -1,6 +1,7 @@
 [versions]
 # libraries
 annotations = "24.1.0"
+gson = "2.10.1"
 
 # plugins
 kotlin = "1.9.22"
@@ -11,6 +12,7 @@ kover = "0.7.5"
 
 [libraries]
 annotations = { group = "org.jetbrains", name = "annotations", version.ref = "annotations" }
+gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
 
 [plugins]
 changelog = { id = "org.jetbrains.changelog", version.ref = "changelog" }

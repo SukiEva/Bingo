@@ -1,8 +1,8 @@
 <!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
 <idea-plugin>
     <id>com.github.sukieva.bingo</id>
-    <name>Bingo Template</name>
-    <vendor>sukieva</vendor>
+    <name>Bingo</name>
+    <vendor>SukiEva</vendor>
 
     <depends>com.intellij.modules.platform</depends>
 
