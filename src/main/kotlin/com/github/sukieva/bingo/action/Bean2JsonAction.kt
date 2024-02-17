@@ -51,7 +51,7 @@ class Bean2JsonAction : BingoBaseAction() {
     }
 
     override fun performAction(event: AnActionEvent, project: Project, editor: Editor, psiClass: PsiClass) {
-        val jsonMap = getDefaultValueOfClass(psiClass, mutableSetOf())
+        val jsonMap = getDefaultValueOfClass(psiClass, mutableSetOf(getQualifiedName(psiClass)))
         val jsonStr = GsonBuilder().setPrettyPrinting().create().toJson(jsonMap)
         val clipboard = Toolkit.getDefaultToolkit().systemClipboard
         val stringSelection = StringSelection(jsonStr)
@@ -61,7 +61,6 @@ class Bean2JsonAction : BingoBaseAction() {
     private fun getDefaultValueOfClass(psiClass: PsiClass?, existsTypeSet: MutableSet<String>): Map<String, Any?> {
         if (psiClass == null) return emptyMap()
         val jsonMap = mutableMapOf<String, Any?>()
-        existsTypeSet.add(getQualifiedName(psiClass))
         psiClass.allFields.forEach { psiField ->
             val jsonName = getJsonName(psiField)
             val psiType = psiField.type
@@ -101,7 +100,7 @@ class Bean2JsonAction : BingoBaseAction() {
                 null
             } else {
                 existsTypeSet.add(qualifiedName)
-                getDefaultValueOfClass(psiClass, existsTypeSet.toMutableSet())
+                getDefaultValueOfClass(psiClass, existsTypeSet)
             }
 
         }
