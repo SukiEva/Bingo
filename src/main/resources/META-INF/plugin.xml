@@ -5,6 +5,7 @@
     <vendor>SukiEva</vendor>
 
     <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.java</depends>
 
     <resource-bundle>messages.MyBundle</resource-bundle>
 
@@ -13,6 +14,14 @@
     </extensions>
 
     <applicationListeners>
-        <listener class="com.github.sukieva.bingo.listeners.MyApplicationActivationListener" topic="com.intellij.openapi.application.ApplicationActivationListener"/>
+        <listener class="com.github.sukieva.bingo.listeners.MyApplicationActivationListener"
+                  topic="com.intellij.openapi.application.ApplicationActivationListener"/>
     </applicationListeners>
+
+    <actions>
+        <action id="com.github.sukieva.bingo.action.Bean2JsonAction"
+                class="com.github.sukieva.bingo.action.Bean2JsonAction" text="ConvertBeanToJson">
+            <add-to-group group-id="EditorPopupMenu" anchor="first"/>
+        </action>
+    </actions>
 </idea-plugin>
