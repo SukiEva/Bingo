@@ -31,11 +31,14 @@ import java.time.LocalTime
  */
 class Bean2JsonAction : BingoBaseAction() {
     companion object {
+        // 支持 Jackson 和 FastJson 注解
         private val JSON_NAME_MAP = linkedMapOf(
             JacksonConstants.JSON_PROPERTY to JacksonConstants.JSON_PROPERTY_NAME,
             FastjsonConstants.JSON_FIELD_2 to FastjsonConstants.JSON_FIELD_NAME,
             FastjsonConstants.JSON_FIELD_1 to FastjsonConstants.JSON_FIELD_NAME
         ).toMap()
+
+        // 支持 Java 常用类型
         private val COMMON_CLASS_MAP = mapOf(
             CommonClassNames.JAVA_LANG_STRING to StringUtils.EMPTY,
             CommonClassNames.JAVA_TIME_LOCAL_DATE to LocalDate.now(),
@@ -55,62 +58,67 @@ class Bean2JsonAction : BingoBaseAction() {
         clipboard.setContents(stringSelection, null)
     }
 
-    private fun getDefaultValueOfClass(psiClass: PsiClass?, existsClass: MutableSet<String>): Map<String, Any?> {
+    private fun getDefaultValueOfClass(psiClass: PsiClass?, existsTypeSet: MutableSet<String>): Map<String, Any?> {
         if (psiClass == null) return emptyMap()
-        // 相同类型的 PsiClass 只处理一次
-        val qualifiedName = psiClass.qualifiedName ?: "unknown"
-        if (existsClass.contains(qualifiedName)) return emptyMap()
-        existsClass.add(qualifiedName)
-
         val jsonMap = mutableMapOf<String, Any?>()
+        existsTypeSet.add(getQualifiedName(psiClass))
         psiClass.allFields.forEach { psiField ->
             val jsonName = getJsonName(psiField)
             val psiType = psiField.type
-            val jsonValue = getDefaultValueOfType(psiType, mutableSetOf(), existsClass)
+            val jsonValue = getDefaultValueOfType(psiType, existsTypeSet.toMutableSet())
             jsonMap[jsonName] = jsonValue
         }
         return jsonMap
     }
 
-    private fun getDefaultValueOfType(
-        type: PsiType, existsType: MutableSet<String>, existsClass: MutableSet<String>
-    ): Any? {
-        val canonicalText = type.canonicalText
-        // 相同类型的 PsiType 只处理一次
-        if (existsType.contains(canonicalText)) return null
-        existsType.add(canonicalText)
-        return when {
-            // 基本类型
-            BingoPsiTypeUtils.isPrimitiveType(type) -> PsiTypesUtil.getDefaultValue(type)
-            // 包装类型
-            BingoPsiTypeUtils.isBoxedType(type) -> PsiTypesUtil.getDefaultValue(BingoPsiTypeUtils.unboxedIfPossible(type))
-            // 数组类型
-            BingoPsiTypeUtils.isArrayType(type) -> {
-                val defaultValueOfType = getDefaultValueOfType(type.deepComponentType, existsType, existsClass)
-                defaultValueOfType?.let { listOf(it) }.orEmpty()
-            }
-            // 集合类型
-            BingoPsiTypeUtils.isCollectionType(type) -> {
-                val elementType = PsiUtil.extractIterableTypeParameter(type, false)
-                elementType?.let { it -> getDefaultValueOfType(it, existsType, existsClass)?.let { listOf(it) } }
-                    .orEmpty()
-            }
-            // 枚举类型
-            BingoPsiTypeUtils.isEnumType(type) -> {
-                val psiClass = PsiUtil.resolveClassInClassTypeOnly(type)
-                psiClass?.fields.stream().filter { it is PsiEnumConstant }.map(PsiField::getName).toList()
-            }
-            // 常见类型
-            COMMON_CLASS_MAP.containsKey(canonicalText) -> COMMON_CLASS_MAP[canonicalText]
-            // 其他引用类型
-            BingoPsiTypeUtils.isClassType(type) -> {
-                val psiClass = PsiUtil.resolveClassInClassTypeOnly(type)
-                getDefaultValueOfClass(psiClass, existsClass)
+    private fun getDefaultValueOfType(type: PsiType, existsTypeSet: MutableSet<String>): Any? = when {
+        // 基本类型
+        BingoPsiTypeUtils.isPrimitiveType(type) -> PsiTypesUtil.getDefaultValue(type)
+        // 包装类型
+        BingoPsiTypeUtils.isBoxedType(type) -> PsiTypesUtil.getDefaultValue(BingoPsiTypeUtils.unboxedIfPossible(type))
+        // 数组类型
+        BingoPsiTypeUtils.isArrayType(type) -> {
+            val elementType = type.deepComponentType
+            getDefaultValueOfElementType(existsTypeSet, elementType)
+        }
+        // 集合类型
+        BingoPsiTypeUtils.isCollectionType(type) -> {
+            val elementType = PsiUtil.extractIterableTypeParameter(type, false)
+            getDefaultValueOfElementType(existsTypeSet, elementType)
+        }
+        // 枚举类型
+        BingoPsiTypeUtils.isEnumType(type) -> {
+            val psiClass = PsiUtil.resolveClassInClassTypeOnly(type)
+            psiClass?.fields.stream().filter { it is PsiEnumConstant }.map(PsiField::getName).toList()
+        }
+        // 常见类型
+        COMMON_CLASS_MAP.containsKey(type.canonicalText) -> COMMON_CLASS_MAP[type.canonicalText]
+        // 其他引用类型
+        BingoPsiTypeUtils.isClassType(type) -> {
+            val psiClass = PsiUtil.resolveClassInClassTypeOnly(type)
+            val qualifiedName = getQualifiedName(psiClass)
+            if (existsTypeSet.contains(qualifiedName)) {
+                null
+            } else {
+                existsTypeSet.add(qualifiedName)
+                getDefaultValueOfClass(psiClass, existsTypeSet.toMutableSet())
             }
 
-            else -> null
         }
+
+        else -> null
     }
+
+
+    private fun getDefaultValueOfElementType(existsTypeSet: MutableSet<String>, elementType: PsiType?) =
+        if (elementType == null || existsTypeSet.contains(elementType.canonicalText)) {
+            emptyList()
+        } else {
+            val defaultValueOfType = getDefaultValueOfType(elementType, existsTypeSet.toMutableSet())
+            defaultValueOfType?.let { listOf(it) }.orEmpty()
+        }
+
+    private fun getQualifiedName(psiClass: PsiClass?) = psiClass?.qualifiedName ?: StringUtils.EMPTY
 
     private fun getJsonName(psiField: PsiField): String {
         for ((fqn, attributeName) in JSON_NAME_MAP) {
