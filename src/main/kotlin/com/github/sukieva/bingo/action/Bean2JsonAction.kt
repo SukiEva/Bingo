@@ -3,7 +3,7 @@ package com.github.sukieva.bingo.action
 import com.github.sukieva.bingo.constant.FastjsonConstants
 import com.github.sukieva.bingo.constant.JacksonConstants
 import com.github.sukieva.bingo.util.psi.BingoPsiTypeUtils
-import com.google.gson.GsonBuilder
+import com.github.sukieva.bingo.util.ui.ClipboardUtils
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
@@ -16,8 +16,6 @@ import com.intellij.psi.util.PsiTypesUtil
 import com.intellij.psi.util.PsiUtil
 import com.intellij.util.containers.stream
 import org.apache.commons.lang3.StringUtils
-import java.awt.Toolkit
-import java.awt.datatransfer.StringSelection
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -51,11 +49,8 @@ class Bean2JsonAction : BingoBaseAction() {
     }
 
     override fun performAction(event: AnActionEvent, project: Project, editor: Editor, psiClass: PsiClass) {
-        val jsonMap = getDefaultValueOfClass(psiClass, mutableSetOf(getQualifiedName(psiClass)))
-        val jsonStr = GsonBuilder().setPrettyPrinting().create().toJson(jsonMap)
-        val clipboard = Toolkit.getDefaultToolkit().systemClipboard
-        val stringSelection = StringSelection(jsonStr)
-        clipboard.setContents(stringSelection, null)
+        val defaultValueMap = getDefaultValueOfClass(psiClass, mutableSetOf(getQualifiedName(psiClass)))
+        ClipboardUtils.setJson(defaultValueMap)
     }
 
     private fun getDefaultValueOfClass(psiClass: PsiClass?, existsTypeSet: MutableSet<String>): Map<String, Any?> {
