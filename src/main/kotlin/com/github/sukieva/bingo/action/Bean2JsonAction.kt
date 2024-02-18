@@ -5,7 +5,9 @@ import com.github.sukieva.bingo.constant.JacksonConstants
 import com.github.sukieva.bingo.util.psi.BingoPsiTypeUtils
 import com.github.sukieva.bingo.util.ui.ClipboardUtils
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.fileTypes.FileTypeManager
 import com.intellij.openapi.project.Project
 import com.intellij.psi.CommonClassNames
 import com.intellij.psi.PsiClass
@@ -51,6 +53,17 @@ class Bean2JsonAction : BingoBaseAction() {
     override fun performAction(event: AnActionEvent, project: Project, editor: Editor, psiClass: PsiClass) {
         val defaultValueMap = getDefaultValueOfClass(psiClass, mutableSetOf(getQualifiedName(psiClass)))
         ClipboardUtils.setJson(defaultValueMap)
+    }
+
+    override fun update(event: AnActionEvent) {
+        val virtualFile = event.getData(CommonDataKeys.VIRTUAL_FILE)
+        if (virtualFile == null) {
+            event.presentation.isVisible = false
+            return
+        }
+        val fileTypeManager = FileTypeManager.getInstance()
+        event.presentation.isVisible =
+            fileTypeManager.getFileTypeByFile(virtualFile) == fileTypeManager.getFileTypeByExtension("java")
     }
 
     private fun getDefaultValueOfClass(psiClass: PsiClass?, existsTypeSet: MutableSet<String>): Map<String, Any?> {
