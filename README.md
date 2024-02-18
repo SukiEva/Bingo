@@ -1,8 +1,8 @@
 # Bingo
 
 ![Build](https://github.com/SukiEva/Bingo/workflows/Build/badge.svg)
-[![Version](https://img.shields.io/jetbrains/plugin/v/PLUGIN_ID.svg)](https://plugins.jetbrains.com/plugin/23787)
-[![Downloads](https://img.shields.io/jetbrains/plugin/d/PLUGIN_ID.svg)](https://plugins.jetbrains.com/plugin/23787)
+[![Version](https://img.shields.io/jetbrains/plugin/v/23787.svg)](https://plugins.jetbrains.com/plugin/23787)
+[![Downloads](https://img.shields.io/jetbrains/plugin/d/23787.svg)](https://plugins.jetbrains.com/plugin/23787)
 
 ## Template ToDo list
 - [x] Create a new [IntelliJ Platform Plugin Template][template] project.
