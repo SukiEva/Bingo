@@ -2,10 +2,19 @@ package com.github.sukieva.bingo.action
 
 import com.github.sukieva.bingo.constant.FastjsonConstants
 import com.github.sukieva.bingo.constant.JacksonConstants
-import com.github.sukieva.bingo.util.psi.BingoPsiTypeUtils
-import com.google.gson.GsonBuilder
+import com.github.sukieva.bingo.util.psi.BingoPsiTypeUtils.isArrayType
+import com.github.sukieva.bingo.util.psi.BingoPsiTypeUtils.isBoxedType
+import com.github.sukieva.bingo.util.psi.BingoPsiTypeUtils.isClassType
+import com.github.sukieva.bingo.util.psi.BingoPsiTypeUtils.isCollectionType
+import com.github.sukieva.bingo.util.psi.BingoPsiTypeUtils.isEnumType
+import com.github.sukieva.bingo.util.psi.BingoPsiTypeUtils.isPrimitiveType
+import com.github.sukieva.bingo.util.psi.BingoPsiTypeUtils.unboxedIfPossible
+import com.github.sukieva.bingo.util.ui.ClipboardUtils
+import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.fileTypes.FileTypeManager
 import com.intellij.openapi.project.Project
 import com.intellij.psi.CommonClassNames
 import com.intellij.psi.PsiClass
@@ -16,8 +25,6 @@ import com.intellij.psi.util.PsiTypesUtil
 import com.intellij.psi.util.PsiUtil
 import com.intellij.util.containers.stream
 import org.apache.commons.lang3.StringUtils
-import java.awt.Toolkit
-import java.awt.datatransfer.StringSelection
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -51,11 +58,23 @@ class Bean2JsonAction : BingoBaseAction() {
     }
 
     override fun performAction(event: AnActionEvent, project: Project, editor: Editor, psiClass: PsiClass) {
-        val jsonMap = getDefaultValueOfClass(psiClass, mutableSetOf(getQualifiedName(psiClass)))
-        val jsonStr = GsonBuilder().setPrettyPrinting().create().toJson(jsonMap)
-        val clipboard = Toolkit.getDefaultToolkit().systemClipboard
-        val stringSelection = StringSelection(jsonStr)
-        clipboard.setContents(stringSelection, null)
+        val defaultValueMap = getDefaultValueOfClass(psiClass, mutableSetOf(getQualifiedName(psiClass)))
+        ClipboardUtils.setJson(defaultValueMap)
+    }
+
+    override fun update(event: AnActionEvent) {
+        val virtualFile = event.getData(CommonDataKeys.VIRTUAL_FILE)
+        if (virtualFile == null) {
+            event.presentation.isVisible = false
+            return
+        }
+        val fileTypeManager = FileTypeManager.getInstance()
+        event.presentation.isVisible =
+            fileTypeManager.getFileTypeByFile(virtualFile) == fileTypeManager.getFileTypeByExtension("java")
+    }
+
+    override fun getActionUpdateThread(): ActionUpdateThread {
+        return ActionUpdateThread.BGT
     }
 
     private fun getDefaultValueOfClass(psiClass: PsiClass?, existsTypeSet: MutableSet<String>): Map<String, Any?> {
@@ -72,28 +91,28 @@ class Bean2JsonAction : BingoBaseAction() {
 
     private fun getDefaultValueOfType(type: PsiType, existsTypeSet: MutableSet<String>): Any? = when {
         // 基本类型
-        BingoPsiTypeUtils.isPrimitiveType(type) -> PsiTypesUtil.getDefaultValue(type)
+        type.isPrimitiveType() -> PsiTypesUtil.getDefaultValue(type)
         // 包装类型
-        BingoPsiTypeUtils.isBoxedType(type) -> PsiTypesUtil.getDefaultValue(BingoPsiTypeUtils.unboxedIfPossible(type))
+        type.isBoxedType() -> PsiTypesUtil.getDefaultValue(type.unboxedIfPossible())
         // 数组类型
-        BingoPsiTypeUtils.isArrayType(type) -> {
+        type.isArrayType() -> {
             val elementType = type.deepComponentType
             getDefaultValueOfElementType(existsTypeSet, elementType)
         }
         // 集合类型
-        BingoPsiTypeUtils.isCollectionType(type) -> {
+        type.isCollectionType() -> {
             val elementType = PsiUtil.extractIterableTypeParameter(type, false)
             getDefaultValueOfElementType(existsTypeSet, elementType)
         }
         // 枚举类型
-        BingoPsiTypeUtils.isEnumType(type) -> {
+        type.isEnumType() -> {
             val psiClass = PsiUtil.resolveClassInClassTypeOnly(type)
             psiClass?.fields.stream().filter { it is PsiEnumConstant }.map(PsiField::getName).toList()
         }
         // 常见类型
         COMMON_CLASS_MAP.containsKey(type.canonicalText) -> COMMON_CLASS_MAP[type.canonicalText]
         // 其他引用类型
-        BingoPsiTypeUtils.isClassType(type) -> {
+        type.isClassType() -> {
             val psiClass = PsiUtil.resolveClassInClassTypeOnly(type)
             val qualifiedName = getQualifiedName(psiClass)
             if (existsTypeSet.contains(qualifiedName)) {
@@ -107,7 +126,6 @@ class Bean2JsonAction : BingoBaseAction() {
 
         else -> null
     }
-
 
     private fun getDefaultValueOfElementType(existsTypeSet: MutableSet<String>, elementType: PsiType?) =
         if (elementType == null || existsTypeSet.contains(elementType.canonicalText)) {

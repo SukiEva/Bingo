@@ -4,19 +4,13 @@
     <name>Bingo</name>
     <vendor>SukiEva</vendor>
 
-    <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.java</depends>
 
     <resource-bundle>messages.MyBundle</resource-bundle>
 
-    <extensions defaultExtensionNs="com.intellij">
-        <toolWindow factoryClass="com.github.sukieva.bingo.toolWindow.MyToolWindowFactory" id="MyToolWindow"/>
-    </extensions>
+    <extensions defaultExtensionNs="com.intellij"/>
 
-    <applicationListeners>
-        <listener class="com.github.sukieva.bingo.listeners.MyApplicationActivationListener"
-                  topic="com.intellij.openapi.application.ApplicationActivationListener"/>
-    </applicationListeners>
+    <applicationListeners/>
 
     <actions>
         <action id="com.github.sukieva.bingo.action.Bean2JsonAction"

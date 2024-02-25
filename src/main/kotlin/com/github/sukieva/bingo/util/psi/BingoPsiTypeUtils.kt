@@ -1,8 +1,14 @@
 package com.github.sukieva.bingo.util.psi
 
-import com.intellij.psi.*
+import com.intellij.psi.CommonClassNames
+import com.intellij.psi.PsiArrayType
+import com.intellij.psi.PsiClass
+import com.intellij.psi.PsiClassType
+import com.intellij.psi.PsiPrimitiveType
+import com.intellij.psi.PsiType
+import com.intellij.psi.PsiTypes
 import com.intellij.psi.util.InheritanceUtil
-import com.intellij.psi.util.PsiUtil
+import com.intellij.psi.util.PsiTypesUtil
 
 
 /**
@@ -13,30 +19,32 @@ import com.intellij.psi.util.PsiUtil
  */
 object BingoPsiTypeUtils {
     private val UNBOXED_TYPE_MAP = mapOf(
-        CommonClassNames.JAVA_LANG_BYTE to PsiType.BYTE,
-        CommonClassNames.JAVA_LANG_CHARACTER to PsiType.CHAR,
-        CommonClassNames.JAVA_LANG_DOUBLE to PsiType.DOUBLE,
-        CommonClassNames.JAVA_LANG_FLOAT to PsiType.FLOAT,
-        CommonClassNames.JAVA_LANG_INTEGER to PsiType.INT,
-        CommonClassNames.JAVA_LANG_LONG to PsiType.LONG,
-        CommonClassNames.JAVA_LANG_SHORT to PsiType.SHORT,
-        CommonClassNames.JAVA_LANG_BOOLEAN to PsiType.BOOLEAN,
+        CommonClassNames.JAVA_LANG_BYTE to PsiTypes.byteType(),
+        CommonClassNames.JAVA_LANG_CHARACTER to PsiTypes.charType(),
+        CommonClassNames.JAVA_LANG_DOUBLE to PsiTypes.doubleType(),
+        CommonClassNames.JAVA_LANG_FLOAT to PsiTypes.floatType(),
+        CommonClassNames.JAVA_LANG_INTEGER to PsiTypes.intType(),
+        CommonClassNames.JAVA_LANG_LONG to PsiTypes.longType(),
+        CommonClassNames.JAVA_LANG_SHORT to PsiTypes.shortType(),
+        CommonClassNames.JAVA_LANG_BOOLEAN to PsiTypes.byteType(),
     )
 
-    fun unboxedIfPossible(type: PsiType): PsiPrimitiveType? = UNBOXED_TYPE_MAP[type.canonicalText]
+    fun PsiType.getPsiClass(): PsiClass? = PsiTypesUtil.getPsiClass(this)
 
-    fun isPrimitiveType(type: PsiType): Boolean = type is PsiPrimitiveType
+    fun PsiType.unboxedIfPossible(): PsiPrimitiveType? = UNBOXED_TYPE_MAP[this.canonicalText]
 
-    fun isArrayType(type: PsiType): Boolean = type is PsiArrayType
+    fun PsiType.isPrimitiveType(): Boolean = this is PsiPrimitiveType
 
-    fun isClassType(type: PsiType): Boolean = type is PsiClassType
+    fun PsiType.isArrayType(): Boolean = this is PsiArrayType
 
-    fun isEnumType(type: PsiType): Boolean = PsiUtil.resolveClassInClassTypeOnly(type)?.isEnum ?: false
+    fun PsiType.isClassType(): Boolean = this is PsiClassType
 
-    fun isBoxedType(type: PsiType): Boolean = UNBOXED_TYPE_MAP.containsKey(type.canonicalText)
+    fun PsiType.isEnumType(): Boolean = this.getPsiClass()?.isEnum ?: false
 
-    fun isCollectionType(type: PsiType): Boolean {
-        val psiClass = PsiUtil.resolveClassInClassTypeOnly(type) ?: return false
+    fun PsiType.isBoxedType(): Boolean = UNBOXED_TYPE_MAP.containsKey(this.canonicalText)
+
+    fun PsiType.isCollectionType(): Boolean {
+        val psiClass = this.getPsiClass() ?: return false
         return InheritanceUtil.isInheritor(
             psiClass, CommonClassNames.JAVA_UTIL_COLLECTION
         ) || InheritanceUtil.isInheritor(psiClass, CommonClassNames.JAVA_UTIL_MAP)
