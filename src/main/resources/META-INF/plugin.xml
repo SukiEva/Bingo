@@ -4,7 +4,6 @@
     <name>Bingo</name>
     <vendor>SukiEva</vendor>
 
-    <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.java</depends>
 
     <resource-bundle>messages.MyBundle</resource-bundle>
